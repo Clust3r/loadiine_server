@@ -51,6 +51,8 @@ namespace cafiine_server
         public const byte BYTE_MOUNT_SD_OK = 0x31;
         public const byte BYTE_MOUNT_SD_BAD = 0x32;
 
+        public const byte BYTE_ERROR_CODE = 0x50;
+
         // Other defines
         public const int FS_MAX_ENTNAME_SIZE = 256;
         public const int FS_MAX_ENTNAME_SIZE_PAD = 0;
@@ -58,9 +60,123 @@ namespace cafiine_server
         public const int FS_MAX_LOCALPATH_SIZE = 511;
         public const int FS_MAX_MOUNTPATH_SIZE = 128;
 
+        public const int ERROR_OFFSET = 128;
+
         // Logs folder
         public static string logs_root = "logs";
-        
+
+        public const int FS_ERROR_CANCELED = -1;
+        public const int FS_ERROR_END = -2;
+        public const int FS_ERROR_MAX = -3;
+        public const int FS_ERROR_ALREADY_OPEN = -4;
+        public const int FS_ERROR_EXISTS = -5;
+        public const int FS_ERROR_NOT_FOUND = -6;
+        public const int FS_ERROR_NOT_FILE = -7;
+        public const int FS_ERROR_NOT_DIR = -8;
+        public const int FS_ERROR_ACCESS_ERROR = -9;
+        public const int FS_ERROR_PERMISSION_ERROR = -10;
+        public const int FS_ERROR_FILE_TOO_BIG = -11;
+        public const int FS_ERROR_STORAGE_FULL = -12;
+        public const int FS_ERROR_JOURNAL_FULL = -13;
+        public const int FS_ERROR_UNSUPPORTED_CMD = -14;
+        public const int FS_ERROR_MEDIA_NOT_READY = -15;
+        public const int FS_ERROR_INVALID_MEDIA = -16;
+        public const int FS_ERROR_MEDIA_ERROR = -17;
+        public const int FS_ERROR_DATA_CORRUPTED = -18;
+        public const int FS_ERROR_WRITE_PROTECTED = -19;
+
+
+        public static string getError(int code)
+        {
+            switch (code)
+            {
+                case FS_ERROR_CANCELED:
+                    {
+                        return FS_ERROR_CANCELED + ": FS_ERROR_CANCELED";                        
+                    }
+                case FS_ERROR_END:
+                    {
+                        return FS_ERROR_END + ": FS_ERROR_END";                       
+                    }
+                case FS_ERROR_MAX:
+                    {
+                        return FS_ERROR_MAX + ": FS_ERROR_MAX";                        
+                    }
+                case FS_ERROR_ALREADY_OPEN:
+                    {
+                        return FS_ERROR_ALREADY_OPEN + ": FS_ERROR_ALREADY_OPEN";                      
+                    }
+                case FS_ERROR_EXISTS:
+                    {
+                        return FS_ERROR_EXISTS + ": FS_ERROR_EXISTS";                       
+                    }
+                case FS_ERROR_NOT_FOUND:
+                    {
+                        return FS_ERROR_NOT_FOUND + ": FS_ERROR_NOT_FOUND";                     
+                    }
+                case FS_ERROR_NOT_FILE:
+                    {
+                        return FS_ERROR_NOT_FILE + ": FS_ERROR_NOT_FILE";                      
+                    }
+                case FS_ERROR_NOT_DIR:
+                    {
+                        return FS_ERROR_NOT_DIR + ": FS_ERROR_NOT_DIR";                       
+                    }
+                case FS_ERROR_ACCESS_ERROR:
+                    {
+                        return FS_ERROR_ACCESS_ERROR + ": FS_ERROR_ACCESS_ERROR";                       
+                    }
+                case FS_ERROR_PERMISSION_ERROR:
+                    {
+                        return FS_ERROR_PERMISSION_ERROR + ": FS_ERROR_PERMISSION_ERROR";                        
+                    }
+                case FS_ERROR_FILE_TOO_BIG:
+                    {
+                        return FS_ERROR_FILE_TOO_BIG + ": FS_ERROR_FILE_TOO_BIG";                       
+                    }
+                case FS_ERROR_STORAGE_FULL:
+                    {
+                        return FS_ERROR_STORAGE_FULL + ": FS_ERROR_STORAGE_FULL";                       
+                    }
+                case FS_ERROR_JOURNAL_FULL:
+                    {
+                        return FS_ERROR_JOURNAL_FULL + ": FS_ERROR_JOURNAL_FULL";                       
+                    }
+                case FS_ERROR_UNSUPPORTED_CMD:
+                    {
+                        return FS_ERROR_UNSUPPORTED_CMD + ": FS_ERROR_UNSUPPORTED_CMD";                       
+                    }
+                case FS_ERROR_MEDIA_NOT_READY:
+                    {
+                        return FS_ERROR_MEDIA_NOT_READY + ": FS_ERROR_MEDIA_NOT_READY";
+                    }
+                case FS_ERROR_INVALID_MEDIA:
+                    {
+                        return FS_ERROR_INVALID_MEDIA + ": FS_ERROR_INVALID_MEDIA";
+                    }
+                case FS_ERROR_MEDIA_ERROR:
+                    {
+                        return FS_ERROR_MEDIA_ERROR + ": FS_ERROR_MEDIA_ERROR";
+                    }
+                case FS_ERROR_DATA_CORRUPTED:
+                    {
+                        return FS_ERROR_DATA_CORRUPTED + ": FS_ERROR_DATA_CORRUPTED";
+                    }
+                case FS_ERROR_WRITE_PROTECTED:
+                    {
+                        return FS_ERROR_WRITE_PROTECTED + ": FS_ERROR_WRITE_PROTECTED";                        
+                    }
+                case 0:
+                    {
+                        return "Okay";                        
+                    }                    
+                default:
+                    {
+                        return "Unkown Error";                       
+                    }                   
+            }
+        }
+        static StreamWriter com_log;
         static void Main(string[] args)
         {
             // Check if logs folder
@@ -76,10 +192,13 @@ namespace cafiine_server
                 file.Delete();
             }
 
+
+            com_log = new StreamWriter(logs_root + "\\" + DateTime.Now.ToString("yyyy-MM-dd") + "-all.txt");
             // Start server
             string name = "[listener]";
             try
-            {
+            {	
+				 Console.WriteLine("loadiine server version 1.1");
                 TcpListener listener = new TcpListener(IPAddress.Any, 7332);
                 listener.Start();
                 Console.WriteLine(name + " Listening on 7332");
@@ -106,6 +225,8 @@ namespace cafiine_server
         {
             log.WriteLine(str);
             log.Flush();
+            com_log.WriteLine(str);
+            com_log.Flush();
             Console.WriteLine(str);
         }
 
@@ -124,11 +245,11 @@ namespace cafiine_server
 
 
                     // Log connection
-                    Console.WriteLine(name + " Accepted connection from client " + client.Client.RemoteEndPoint.ToString());
+                    //Console.WriteLine(name + " Accepted connection from client " + client.Client.RemoteEndPoint.ToString());
 
                     // Create log file for current thread
                     log = new StreamWriter(logs_root + "\\" + DateTime.Now.ToString("yyyy-MM-dd") + "-" + name + ".txt");
-                    log.WriteLine(name + " Accepted connection from client " + client.Client.RemoteEndPoint.ToString());
+                    Log(log,name + " Accepted connection from client " + client.Client.RemoteEndPoint.ToString());
 
                     writer.Write(BYTE_SPECIAL);
 
@@ -348,6 +469,15 @@ namespace cafiine_server
                                     if (reader.ReadByte() != 0) throw new InvalidDataException();
 
                                     Log(log, name + " LogString =>(\"" + str + "\")");
+                                    break;
+                                }
+                            case BYTE_ERROR_CODE:
+                                {
+                                    int len_str = reader.ReadInt32();                                   
+                                    string str = reader.ReadString(Encoding.ASCII, len_str - 1);
+                                    if (reader.ReadByte() != 0) throw new InvalidDataException();
+                                    int code = str[0] - ERROR_OFFSET;
+                                    Log(log, name + " Error =>(\"" + getError(code)+  "\")");
                                     break;
                                 }
                             default:
